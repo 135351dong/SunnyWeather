@@ -73,6 +73,7 @@ class PlaceFragment:Fragment() {
                     result.exceptionOrNull()?.printStackTrace()
                 }
             })
+            owner.lifecycle.removeObserver(this)
             }
         })
     }
