@@ -17,8 +17,10 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.sunnyweather.android.databinding.FragmentPlaceBinding
 
 class PlaceFragment:Fragment() {
+    //定义binding方便全局使用，正常binding变量只有在onCreateView与onDestroyView才是可用的
+    private var _binding : FragmentPlaceBinding? =null
 
-    lateinit var _binding : FragmentPlaceBinding
+    private var binding = _binding!!
 
     val viewModel by lazy { ViewModelProvider(this).get(PlaceViewModel::class.java) }//被调用时获取当前ViewModel
 
@@ -29,8 +31,8 @@ class PlaceFragment:Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        _binding = FragmentPlaceBinding.inflate(layoutInflater,container,false)
-        val binding = _binding
+        _binding = FragmentPlaceBinding.inflate(layoutInflater,container,false)//进行视图绑定
+        //val binding = _binding
         return binding.root
 
 
@@ -43,17 +45,17 @@ class PlaceFragment:Fragment() {
             override fun onCreate(owner: LifecycleOwner) {
                 super.onCreate(owner)
                 val layoutManager = LinearLayoutManager(activity)
-                _binding.recyclerView.layoutManager = layoutManager//定义布局管理器（线性布局）
+                binding.recyclerView.layoutManager = layoutManager//定义布局管理器（线性布局）
                 adapter = PlaceAdapter(this@PlaceFragment,viewModel.placeList)//配置适配器，将PlaceFragment与place_item绑定
-                _binding.recyclerView.adapter = adapter
-                _binding.searchPlaceEdit.addTextChangedListener {editable ->//监听搜索框数据变化，并随之做出ui更新
+                binding.recyclerView.adapter = adapter
+                binding.searchPlaceEdit.addTextChangedListener {editable ->//监听搜索框数据变化，并随之做出ui更新
                     val content = editable.toString()
                     if(content.isNotEmpty()){
                         //Log.d("input","$editable")
                         viewModel.searchPlaces(content)//根据传入数据搜索地点，发起搜索城市数据的网络请求
                     }else{
-                        _binding.recyclerView.visibility = View.GONE//布局不可见，并取消占用空间重新布局
-                        _binding.bgImageView.visibility = View.VISIBLE//显示背景图
+                        binding.recyclerView.visibility = View.GONE//布局不可见，并取消占用空间重新布局
+                        binding.bgImageView.visibility = View.VISIBLE//显示背景图
                         viewModel.placeList.clear()//删除缓存
                         adapter.notifyDataSetChanged()//通知数据变化，ui更新
                     }
@@ -62,8 +64,8 @@ class PlaceFragment:Fragment() {
             viewModel.placeLiveData.observe(this@PlaceFragment, Observer { result->
                 val places = result.getOrNull()
                 if(places!=null){//如果搜索结果不为空
-                    _binding.recyclerView.visibility = View.VISIBLE
-                    _binding.bgImageView.visibility = View.GONE
+                    binding.recyclerView.visibility = View.VISIBLE
+                    binding.bgImageView.visibility = View.GONE
                     //重置placeList
                     viewModel.placeList.clear()
                     viewModel.placeList.addAll(places)
@@ -76,5 +78,10 @@ class PlaceFragment:Fragment() {
             owner.lifecycle.removeObserver(this)
             }
         })
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null//binding置空，防止内存泄露。原因：fragment生命周期大于activity
     }
 }
