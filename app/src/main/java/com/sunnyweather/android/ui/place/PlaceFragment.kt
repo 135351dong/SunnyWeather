@@ -1,6 +1,7 @@
 package com.sunnyweather.android.ui.place
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -15,12 +16,13 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.sunnyweather.android.databinding.FragmentPlaceBinding
+import com.sunnyweather.android.ui.weather.WeatherActivity
 
 class PlaceFragment:Fragment() {
     //定义binding方便全局使用，正常binding变量只有在onCreateView与onDestroyView才是可用的
     private var _binding : FragmentPlaceBinding? =null
 
-    private var binding = _binding!!
+    private val binding get() = _binding!!
 
     val viewModel by lazy { ViewModelProvider(this).get(PlaceViewModel::class.java) }//被调用时获取当前ViewModel
 
@@ -44,6 +46,20 @@ class PlaceFragment:Fragment() {
         requireActivity().lifecycle.addObserver(object :DefaultLifecycleObserver{//开启附属activity的生命周期监听
             override fun onCreate(owner: LifecycleOwner) {
                 super.onCreate(owner)
+
+            //储存搜索信息，避免每次进入都要重新搜索
+            if (viewModel.isPlaceSaved()){
+                val place = viewModel.getSavedPlace()
+                val intent = Intent(context,WeatherActivity::class.java).apply {
+                    putExtra("location_lng",place.location.lng)
+                    putExtra("location_lat",place.location.lat)
+                    putExtra("place_name",place.name)
+                }
+                startActivity(intent)
+                activity?.finish()
+                return
+            }
+
                 val layoutManager = LinearLayoutManager(activity)
                 binding.recyclerView.layoutManager = layoutManager//定义布局管理器（线性布局）
                 adapter = PlaceAdapter(this@PlaceFragment,viewModel.placeList)//配置适配器，将PlaceFragment与place_item绑定

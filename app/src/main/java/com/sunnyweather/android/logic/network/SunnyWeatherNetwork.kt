@@ -12,6 +12,11 @@ import kotlin.coroutines.suspendCoroutine
 object SunnyWeatherNetwork {
     private val placeService = ServiceCreator.create<PlaceService>()//创建PlaceService的动态代理对象
 
+    private val weatherService = ServiceCreator.create<WeatherService>()//创建WeatherService的代理对象
+
+    //向服务器发送天气数据请求
+    suspend fun getDailyWeather(lng: String, lat: String) = weatherService.getDailyWeather(lng, lat).await()
+    suspend fun getRealtimeWeather(lng: String, lat: String) = weatherService.getRealtimeWeather(lng, lat).await()
     suspend fun searchPlaces(query: String) = placeService.searchPlaces(query).await()//发送城市数据请求
 
     private suspend fun <T> Call<T>.await():T{//声明挂起函数
