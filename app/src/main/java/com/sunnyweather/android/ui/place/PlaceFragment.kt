@@ -3,7 +3,6 @@ package com.sunnyweather.android.ui.place
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -15,6 +14,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.sunnyweather.android.MainActivity
 import com.sunnyweather.android.databinding.FragmentPlaceBinding
 import com.sunnyweather.android.ui.weather.WeatherActivity
 
@@ -48,7 +48,7 @@ class PlaceFragment:Fragment() {
                 super.onCreate(owner)
 
             //储存搜索信息，避免每次进入都要重新搜索
-            if (viewModel.isPlaceSaved()){
+            if ( activity is MainActivity && viewModel.isPlaceSaved()){
                 val place = viewModel.getSavedPlace()
                 val intent = Intent(context,WeatherActivity::class.java).apply {
                     putExtra("location_lng",place.location.lng)

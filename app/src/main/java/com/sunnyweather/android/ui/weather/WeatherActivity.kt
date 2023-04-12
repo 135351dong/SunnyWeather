@@ -1,18 +1,17 @@
 package com.sunnyweather.android.ui.weather
 
+import android.content.Context
 import android.graphics.Color
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.os.PatternMatcher
 import android.view.LayoutInflater
 import android.view.View
-import android.view.WindowInsets
-import android.widget.TextView
+import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
-import androidx.core.view.ViewCompat
+import androidx.core.view.GravityCompat
 import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.sunnyweather.android.R
@@ -24,15 +23,16 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 class WeatherActivity : AppCompatActivity() {
-    private lateinit var binding: ActivityWeatherBinding//绑定视图，全局调用
+    lateinit var binding: ActivityWeatherBinding//绑定视图，全局调用
 
-    private val viewModel by lazy { ViewModelProvider(this).get(WeatherViewModel::class.java) }//绑定viewModel拿数据
+    val viewModel by lazy { ViewModelProvider(this).get(WeatherViewModel::class.java) }//绑定viewModel拿数据
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityWeatherBinding.inflate(layoutInflater)//初始化binding
+
         //设置状态栏透明
-        WindowCompat.setDecorFitsSystemWindows(window,false)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         window.statusBarColor = Color.TRANSPARENT
         window.navigationBarColor = Color.TRANSPARENT
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -40,6 +40,7 @@ class WeatherActivity : AppCompatActivity() {
         }
 
         setContentView(binding.root)//加载布局
+
         //将intent的相关信息赋值到WeatherViewModel的相应变量中
         if (viewModel.locationLng.isEmpty())
             viewModel.locationLng = intent.getStringExtra("location_lng") ?: ""//获取上一个activity传递的数据
@@ -53,8 +54,43 @@ class WeatherActivity : AppCompatActivity() {
             val weather = result.getOrNull()
             if (weather != null) showWeatherInfo(weather)//显示天气信息
             else Toast.makeText(this, "无法成功获取天气信息", Toast.LENGTH_SHORT).show()
+            binding.swipeRefresh.isRefreshing = false//检测到数据刷新关闭进度条
         })
-        viewModel.refreshWeather(viewModel.locationLng, viewModel.locationLat)//刷新一次天气数据便于观察
+        binding.swipeRefresh.setColorSchemeResources(R.color.colorPrimary)//设置加载图标颜色
+        refreshWeather()//自动刷新一次天气数据用于观察
+        binding.swipeRefresh.setOnRefreshListener {//下拉刷新天气
+            refreshWeather()
+        }
+        //viewModel.refreshWeather(viewModel.locationLng, viewModel.locationLat)//刷新一次天气数据便于观察
+
+        //开启滑动窗口
+        binding.now.navBtn.setOnClickListener {
+            binding.drawerLayout.openDrawer(GravityCompat.START)
+        }
+        //观察滑动窗口行为
+        binding.drawerLayout.addDrawerListener(object : DrawerLayout.DrawerListener {
+            override fun onDrawerStateChanged(newState: Int) {}
+
+            override fun onDrawerSlide(drawerView: View, slideOffset: Float) {}
+
+            override fun onDrawerOpened(drawerView: View) {}
+
+            override fun onDrawerClosed(drawerView: View) {//在窗口关闭时关闭输入法
+                val manager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                manager.hideSoftInputFromWindow(
+                    drawerView.windowToken,
+                    InputMethodManager.HIDE_NOT_ALWAYS
+                )
+            }
+        })
+    }
+
+    fun refreshWeather() {//刷新天气方法
+        viewModel.refreshWeather(
+            viewModel.locationLng,
+            viewModel.locationLat
+        )//调用WeatherViewModel中的refreshWeather()方法
+        binding.swipeRefresh.isRefreshing = true//显示下方刷新进度条，在检测到数据变化时消失
     }
 
     //将天气信息填入到相应的xml布局中并显示出来

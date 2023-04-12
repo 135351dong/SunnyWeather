@@ -4,7 +4,6 @@ import android.content.Intent
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.TextView
-import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
 import com.sunnyweather.android.databinding.PlaceItemBinding
 import com.sunnyweather.android.logic.model.Place
@@ -31,6 +30,17 @@ class PlaceAdapter(
         holder.placeAddress.text = place.address
 
         holder.itemView.setOnClickListener {//启动WeatherActivity
+            val activity = fragment.activity
+            if (activity is WeatherActivity) {
+                activity.let {
+                    it.viewModel.locationLng = place.location.lng
+                    it.viewModel.locationLat = place.location.lat
+                    it.viewModel.placeName = place.name
+                    it.binding.drawerLayout.closeDrawers()
+                    it.refreshWeather()
+                }
+            }
+
             val intent = Intent(fragment.context, WeatherActivity::class.java).apply {
                 putExtra("location_lng", place.location.lng)
                 putExtra("location_lat", place.location.lat)
